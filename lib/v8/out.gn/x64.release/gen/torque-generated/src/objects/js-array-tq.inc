@@ -1,0 +1,2 @@
+class JSArrayIterator;
+class JSArray;
