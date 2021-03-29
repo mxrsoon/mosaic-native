@@ -22,6 +22,9 @@ namespace mosaic::presentation {
 			void SetMinHeight(int value);
 			bool GetResizable();
 			void SetResizable(bool value);
+			const char* GetTitle();
+			void SetTitle(const char* value);
+			
 			static Local<Function> Init(Local<Context> context);
 			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
 			static void ShowCallback(const FunctionCallbackInfo<Value> &args);
@@ -35,6 +38,8 @@ namespace mosaic::presentation {
 			static void SetMinHeightCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
 			static void GetResizableCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
 			static void SetResizableCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
+			static void GetTitleCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
+			static void SetTitleCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
 
 			// TODO: Remake this
 			static void GetOnClickCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);

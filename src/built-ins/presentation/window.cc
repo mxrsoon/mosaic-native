@@ -51,7 +51,10 @@ namespace mosaic::presentation {
 		proto_tpl->Set(String::NewFromUtf8(isolate, "show").ToLocalChecked(), show_tpl);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "width").ToLocalChecked(), GetWidthCallback, SetWidthCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "height").ToLocalChecked(), GetHeightCallback, SetHeightCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minWidth").ToLocalChecked(), GetMinWidthCallback, SetMinWidthCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minHeight").ToLocalChecked(), GetMinHeightCallback, SetMinHeightCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "resizable").ToLocalChecked(), GetResizableCallback, SetResizableCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "title").ToLocalChecked(), GetTitleCallback, SetTitleCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "onClick").ToLocalChecked(), GetOnClickCallback, SetOnClickCallback);
 
 		return handle_scope.Escape(class_tpl->GetFunction(context).ToLocalChecked());
@@ -100,11 +103,19 @@ namespace mosaic::presentation {
 	}
 
 	bool Window::GetResizable() {
-    	return gtk_window_get_resizable(GTK_WINDOW(this->window_));
+		return gtk_window_get_resizable(GTK_WINDOW(this->window_));
 	}
 
 	void Window::SetResizable(bool value) {
 		gtk_window_set_resizable(GTK_WINDOW(this->window_), value);
+	}
+
+	const char* Window::GetTitle() {
+		return gtk_window_get_title(GTK_WINDOW(this->window_));
+	}
+
+	void Window::SetTitle(const char* value) {
+		gtk_window_set_title(GTK_WINDOW(this->window_), value);
 	}
 
 	void Window::ConstructorCallback(const FunctionCallbackInfo<Value> &args) {
@@ -231,6 +242,27 @@ namespace mosaic::presentation {
 
 		if (value->IsBoolean()) {
 			self->SetResizable(value->BooleanValue(isolate));
+		}
+	}
+
+	void Window::GetTitleCallback(Local<String> property, const PropertyCallbackInfo<Value>& info) {
+		Isolate* isolate = info.GetIsolate();
+		HandleScope handle_scope(isolate);
+		Window* self = NativeClass::Unwrap(info.This());
+
+		Local<String> value = String::NewFromUtf8(isolate, self->GetTitle()).ToLocalChecked();
+		info.GetReturnValue().Set(value);
+	}
+
+	void Window::SetTitleCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
+		Isolate* isolate = info.GetIsolate();
+		HandleScope handle_scope(isolate);
+		Local<Context> context = isolate->GetCurrentContext();
+		Window* self = NativeClass::Unwrap(info.This());
+
+		if (value->IsString()) {
+			String::Utf8Value str(isolate, value);
+			self->SetTitle(*str);
 		}
 	}
 

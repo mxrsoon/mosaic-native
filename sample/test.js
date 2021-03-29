@@ -4,6 +4,8 @@ import { sleep } from "lib/utils.js";
 
 // Instantiate window
 const window = new Window("A window", 600, 400);
+window.minWidth = 300;
+window.minHeight = 300;
 
 // Just for fun
 Debug.log("Showing window!");
