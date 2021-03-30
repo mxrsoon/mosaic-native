@@ -21,6 +21,9 @@ namespace mosaic::diagnostics {
 
 	class DebugModule : public NativeModule<DebugModule> {
 		public:
-			static Local<Module> Make(Isolate* isolate);
+			Local<Module> Make() override;
+		
+		protected:
+			using NativeModule<DebugModule>::NativeModule;
 	};
 }

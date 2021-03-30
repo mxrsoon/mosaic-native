@@ -50,8 +50,11 @@ namespace mosaic::presentation {
 			Persistent<Context> constructor_;
 	};
 
-	class WindowModule : public NativeModule {
+	class WindowModule : public NativeModule<WindowModule> {
 		public:
-			static Local<Module> Make(Isolate* isolate);
+			Local<Module> Make() override;
+		
+		protected:
+			using NativeModule<WindowModule>::NativeModule;
 	};
 }

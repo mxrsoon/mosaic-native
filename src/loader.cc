@@ -158,6 +158,7 @@ MaybeLocal<Module> resolve_module_callback(Local<Context> context, Local<String>
 
 MaybeLocal<Module> load_module(Isolate* isolate, Local<Context> context, const char* path) {
 	Local<Module> module;
+	std::string path_str(path);
 
 	ScriptOrigin* origin = new ScriptOrigin(
 		String::NewFromUtf8(isolate, path, NewStringType::kNormal).ToLocalChecked(),   // specifier
@@ -172,21 +173,29 @@ MaybeLocal<Module> load_module(Isolate* isolate, Local<Context> context, const c
 		Local<PrimitiveArray>()                                                        // host options
 	);
 
-	if (strcmp(path, "@mosaic/diagnostics/Debug") == 0) {
-		module = mosaic::diagnostics::DebugModule::Make(isolate);
-	} else if (strcmp(path, "@mosaic/presentation/Window") == 0) {
-		module = mosaic::presentation::WindowModule::Make(isolate);
+	if (path_str.starts_with("@mosaic")) {
+		NativeModuleBase* native_module;
+
+		if (strcmp(path, "@mosaic/diagnostics/Debug") == 0) {
+			native_module = (NativeModuleBase*)mosaic::diagnostics::DebugModule::GetInstance(isolate);
+		} else if (strcmp(path, "@mosaic/presentation/Window") == 0) {
+			native_module = (NativeModuleBase*)mosaic::presentation::WindowModule::GetInstance(isolate);
+		}
+
+		if (native_module != nullptr) {
+			module = native_module->Make();
+		}
 	} else {
 		const char* contents = read_file(path);
 		Local<String> source_text = String::NewFromUtf8(isolate, contents, NewStringType::kNormal).ToLocalChecked();
 		
 		Context::Scope context_scope(context);
 		ScriptCompiler::Source source(source_text, *origin);
+		ScriptCompiler::CompileModule(isolate, &source).ToLocal(&module);
+	}
 
-		// Catch module compilation errors
-		if (!ScriptCompiler::CompileModule(isolate, &source).ToLocal(&module)) {
-			return MaybeLocal<Module>();
-		}
+	if (module.IsEmpty()) {
+		return MaybeLocal<Module>();
 	}
 
 	ModuleInfo* mod_info = new ModuleInfo(module, origin);

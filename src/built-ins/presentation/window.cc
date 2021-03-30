@@ -13,28 +13,27 @@ using namespace std::placeholders;
 
 namespace mosaic::presentation {
 	Window::Window(char* title, int width, int height) {
-
 		window_ = gtk_application_window_new(gtk_app);
 		gtk_window_set_title(GTK_WINDOW(window_), title);
 		gtk_window_set_default_size(GTK_WINDOW(window_), width, height);
 
-		GtkWidget* button;
-		button = gtk_button_new_with_label("Click here");
-		gtk_container_add(GTK_CONTAINER(window_), button);
-		gtk_widget_show(button);
+		// GtkWidget* button;
+		// button = gtk_button_new_with_label("Click here");
+		// gtk_container_add(GTK_CONTAINER(window_), button);
+		// gtk_widget_show(button);
 
-		g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton* button, gpointer user_data) {
-			Isolate* isolate = Isolate::GetCurrent();
-			HandleScope handle_scope(isolate);
-			Local<Context> context = isolate->GetCurrentContext();
+		// g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton* button, gpointer user_data) {
+		// 	Isolate* isolate = Isolate::GetCurrent();
+		// 	HandleScope handle_scope(isolate);
+		// 	Local<Context> context = isolate->GetCurrentContext();
 
-			Window* self = (Window*)user_data;
-			Local<Function> callback = Local<Function>::New(isolate, self->callback_);
+		// 	Window* self = (Window*)user_data;
+		// 	Local<Function> callback = Local<Function>::New(isolate, self->callback_);
 
-			if (!callback.IsEmpty()) {
-				callback->Call(context, context->Global(), 0, NULL);
-			}
-		}), this);
+		// 	if (!callback.IsEmpty()) {
+		// 		callback->Call(context, context->Global(), 0, NULL);
+		// 	}
+		// }), this);
 	}
 
 	void Window::Show() {
@@ -111,7 +110,7 @@ namespace mosaic::presentation {
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minHeight").ToLocalChecked(), GetMinHeightCallback, SetMinHeightCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "resizable").ToLocalChecked(), GetResizableCallback, SetResizableCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "title").ToLocalChecked(), GetTitleCallback, SetTitleCallback);
-		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "onClick").ToLocalChecked(), GetOnClickCallback, SetOnClickCallback);
+		// proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "onClick").ToLocalChecked(), GetOnClickCallback, SetOnClickCallback);
 
 		return handle_scope.Escape(class_tpl->GetFunction(context).ToLocalChecked());
 	}
@@ -269,31 +268,32 @@ namespace mosaic::presentation {
 		self->Show();
 	}
 
-	void Window::GetOnClickCallback(Local<String> property, const PropertyCallbackInfo<Value>& info) {
-		Isolate* isolate = info.GetIsolate();
-		HandleScope handle_scope(isolate);
-		Window* self = NativeClass::Unwrap(info.This());
+	// void Window::GetOnClickCallback(Local<String> property, const PropertyCallbackInfo<Value>& info) {
+	// 	Isolate* isolate = info.GetIsolate();
+	// 	HandleScope handle_scope(isolate);
+	// 	Window* self = NativeClass::Unwrap(info.This());
 
-		Local<Function> callback = Local<Function>::New(isolate, self->callback_);
-		info.GetReturnValue().Set(callback);
-	}
+	// 	Local<Function> callback = Local<Function>::New(isolate, self->callback_);
+	// 	info.GetReturnValue().Set(callback);
+	// }
 
-	void Window::SetOnClickCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
-		Isolate* isolate = info.GetIsolate();
-		HandleScope handle_scope(isolate);
-		Local<Context> context = isolate->GetCurrentContext();
-		Window* self = NativeClass::Unwrap(info.This());
+	// void Window::SetOnClickCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
+	// 	Isolate* isolate = info.GetIsolate();
+	// 	HandleScope handle_scope(isolate);
+	// 	Local<Context> context = isolate->GetCurrentContext();
+	// 	Window* self = NativeClass::Unwrap(info.This());
 
-		if (value->IsFunction()) {
-			self->callback_.Reset(isolate, Local<Function>::Cast(value));
-		} else {
-			isolate->ThrowException(Exception::TypeError(
-				String::NewFromUtf8(isolate, "Failed to set callback. It must be a function.").ToLocalChecked()
-			));
-		}
-	}
+	// 	if (value->IsFunction()) {
+	// 		self->callback_.Reset(isolate, Local<Function>::Cast(value));
+	// 	} else {
+	// 		isolate->ThrowException(Exception::TypeError(
+	// 			String::NewFromUtf8(isolate, "Failed to set callback. It must be a function.").ToLocalChecked()
+	// 		));
+	// 	}
+	// }
 
-	Local<Module> WindowModule::Make(Isolate* isolate) {
+	Local<Module> WindowModule::Make() {
+		Isolate* isolate = this->GetIsolate();
 		EscapableHandleScope handle_scope(isolate);
 
 		Local<Module> module = Module::CreateSyntheticModule(

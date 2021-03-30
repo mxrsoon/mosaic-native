@@ -65,7 +65,8 @@ namespace mosaic::diagnostics {
 		fflush(stdout);
 	}
 
-	Local<Module> DebugModule::Make(Isolate* isolate) {
+	Local<Module> DebugModule::Make() {
+		Isolate* isolate = this->GetIsolate();
 		EscapableHandleScope handle_scope(isolate);
 
 		Local<Module> module = Module::CreateSyntheticModule(
