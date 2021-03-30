@@ -11,7 +11,9 @@ using namespace piston;
 namespace mosaic::presentation {
 	class Window : public NativeClass<Window> {
 		public:
+			/* Native members */
 			void Show();
+			void AddChild(GtkWidget* widget);
 			int GetWidth();
 			void SetWidth(int value);
 			int GetHeight();
@@ -24,10 +26,13 @@ namespace mosaic::presentation {
 			void SetResizable(bool value);
 			const char* GetTitle();
 			void SetTitle(const char* value);
+			inline GtkWidget* GetGtkWidget() { return widget_; };
 			
+			/* V8 members */
 			static Local<Function> Init(Local<Context> context);
 			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
 			static void ShowCallback(const FunctionCallbackInfo<Value> &args);
+			static void AddChildCallback(const FunctionCallbackInfo<Value> &args);
 			static void GetWidthCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
 			static void SetWidthCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
 			static void GetHeightCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
@@ -41,13 +46,11 @@ namespace mosaic::presentation {
 			static void GetTitleCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
 			static void SetTitleCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
 
-		private:
+		protected:
 			Window(char* title, int width, int height);
 			~Window() {};
-			GtkWidget * window_ = nullptr;
-
-			// TODO: Map constructors to contexts
-			Persistent<Context> constructor_;
+			inline void SetGtkWidget(GtkWidget* widget) { widget_ = widget; };
+			GtkWidget* widget_;
 	};
 
 	class WindowModule : public NativeModule<WindowModule> {

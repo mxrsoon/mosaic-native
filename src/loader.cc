@@ -16,6 +16,7 @@
 #include <piston_native_module.h>
 #include <built-ins/diagnostics/debug.h>
 #include <built-ins/presentation/window.h>
+#include <built-ins/presentation/button.h>
 
 #include "loader.h"
 
@@ -180,6 +181,8 @@ MaybeLocal<Module> load_module(Isolate* isolate, Local<Context> context, const c
 			native_module = (NativeModuleBase*)mosaic::diagnostics::DebugModule::GetInstance(isolate);
 		} else if (strcmp(path, "@mosaic/presentation/Window") == 0) {
 			native_module = (NativeModuleBase*)mosaic::presentation::WindowModule::GetInstance(isolate);
+		} else if (strcmp(path, "@mosaic/presentation/Button") == 0) {
+			native_module = (NativeModuleBase*)mosaic::presentation::ButtonModule::GetInstance(isolate);
 		}
 
 		if (native_module != nullptr) {

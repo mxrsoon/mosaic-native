@@ -4,6 +4,7 @@
 #include <piston_native_class.h>
 #include <piston_native_module.h>
 #include <built-ins/presentation/window.h>
+#include <built-ins/presentation/button.h>
 #include <stdio.h>
 #include <glib.h>
 #include "loader.h"
@@ -13,83 +14,69 @@ using namespace std::placeholders;
 
 namespace mosaic::presentation {
 	Window::Window(char* title, int width, int height) {
-		window_ = gtk_application_window_new(gtk_app);
-		gtk_window_set_title(GTK_WINDOW(window_), title);
-		gtk_window_set_default_size(GTK_WINDOW(window_), width, height);
-
-		// GtkWidget* button;
-		// button = gtk_button_new_with_label("Click here");
-		// gtk_container_add(GTK_CONTAINER(window_), button);
-		// gtk_widget_show(button);
-
-		// g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton* button, gpointer user_data) {
-		// 	Isolate* isolate = Isolate::GetCurrent();
-		// 	HandleScope handle_scope(isolate);
-		// 	Local<Context> context = isolate->GetCurrentContext();
-
-		// 	Window* self = (Window*)user_data;
-		// 	Local<Function> callback = Local<Function>::New(isolate, self->callback_);
-
-		// 	if (!callback.IsEmpty()) {
-		// 		callback->Call(context, context->Global(), 0, NULL);
-		// 	}
-		// }), this);
+		this->SetGtkWidget(gtk_application_window_new(gtk_app));
+		gtk_window_set_title(GTK_WINDOW(this->GetGtkWidget()), title);
+		gtk_window_set_default_size(GTK_WINDOW(this->GetGtkWidget()), width, height);
 	}
 
 	void Window::Show() {
-		gtk_window_present(GTK_WINDOW(this->window_));
+		gtk_window_present(GTK_WINDOW(this->GetGtkWidget()));
+	}
+	
+	void Window::AddChild(GtkWidget* widget) {
+		gtk_container_add(GTK_CONTAINER(widget_), widget);
 	}
 
 	int Window::GetWidth() {
-    	return gtk_widget_get_allocated_width(this->window_);
+    	return gtk_widget_get_allocated_width(this->GetGtkWidget());
 	}
 
 	void Window::SetWidth(int value) {
-		gtk_window_resize(GTK_WINDOW(this->window_), value, this->GetHeight());
+		gtk_window_resize(GTK_WINDOW(this->GetGtkWidget()), value, this->GetHeight());
 	}
 
 	int Window::GetHeight() {
-    	return gtk_widget_get_allocated_height(this->window_);
+    	return gtk_widget_get_allocated_height(this->GetGtkWidget());
 	}
 
 	void Window::SetHeight(int value) {
-		gtk_window_resize(GTK_WINDOW(this->window_), this->GetWidth(), value);
+		gtk_window_resize(GTK_WINDOW(this->GetGtkWidget()), this->GetWidth(), value);
 	}
 
 	int Window::GetMinWidth() {
 		gint requested_width;
-		gtk_widget_get_size_request(this->window_, &requested_width, NULL);
+		gtk_widget_get_size_request(this->GetGtkWidget(), &requested_width, NULL);
 		return requested_width;
 	}
 
 	void Window::SetMinWidth(int value) {
-		gtk_widget_set_size_request(this->window_, value, this->GetMinHeight());
+		gtk_widget_set_size_request(this->GetGtkWidget(), value, this->GetMinHeight());
 	}
 
 	int Window::GetMinHeight() {
 		gint requested_height;
-		gtk_widget_get_size_request(this->window_, NULL, &requested_height);
+		gtk_widget_get_size_request(this->GetGtkWidget(), NULL, &requested_height);
 		return requested_height;
 	}
 
 	void Window::SetMinHeight(int value) {
-		gtk_widget_set_size_request(this->window_, this->GetMinWidth(), value);
+		gtk_widget_set_size_request(this->GetGtkWidget(), this->GetMinWidth(), value);
 	}
 
 	bool Window::GetResizable() {
-		return gtk_window_get_resizable(GTK_WINDOW(this->window_));
+		return gtk_window_get_resizable(GTK_WINDOW(this->GetGtkWidget()));
 	}
 
 	void Window::SetResizable(bool value) {
-		gtk_window_set_resizable(GTK_WINDOW(this->window_), value);
+		gtk_window_set_resizable(GTK_WINDOW(this->GetGtkWidget()), value);
 	}
 
 	const char* Window::GetTitle() {
-		return gtk_window_get_title(GTK_WINDOW(this->window_));
+		return gtk_window_get_title(GTK_WINDOW(this->GetGtkWidget()));
 	}
 
 	void Window::SetTitle(const char* value) {
-		gtk_window_set_title(GTK_WINDOW(this->window_), value);
+		gtk_window_set_title(GTK_WINDOW(this->GetGtkWidget()), value);
 	}
 
 	Local<Function> Window::Init(Local<Context> context) {
@@ -101,9 +88,11 @@ namespace mosaic::presentation {
 		class_tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
 		Local<FunctionTemplate> show_tpl = FunctionTemplate::New(isolate, ShowCallback);
+		Local<FunctionTemplate> add_child_tpl = FunctionTemplate::New(isolate, AddChildCallback);
 
 		Local<ObjectTemplate> proto_tpl = class_tpl->PrototypeTemplate();
 		proto_tpl->Set(String::NewFromUtf8(isolate, "show").ToLocalChecked(), show_tpl);
+		proto_tpl->Set(String::NewFromUtf8(isolate, "addChild").ToLocalChecked(), add_child_tpl);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "width").ToLocalChecked(), GetWidthCallback, SetWidthCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "height").ToLocalChecked(), GetHeightCallback, SetHeightCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minWidth").ToLocalChecked(), GetMinWidthCallback, SetMinWidthCallback);
@@ -122,7 +111,7 @@ namespace mosaic::presentation {
 		if (args.IsConstructCall()) {
 			if (args.Length() < 3) {
 				isolate->ThrowException(Exception::TypeError(
-					String::NewFromUtf8(isolate, "Failed to construct 'Window': 3 argument required.").ToLocalChecked()
+					String::NewFromUtf8(isolate, "Failed to construct 'Window': 3 arguments required.").ToLocalChecked()
 				));
 			}
 
@@ -139,6 +128,35 @@ namespace mosaic::presentation {
 			isolate->ThrowException(Exception::TypeError(
 				String::NewFromUtf8(isolate, "Please use the 'new' operator, this constructor cannot be called as a function.").ToLocalChecked()
 			));
+		}
+	}
+
+	void Window::ShowCallback(const FunctionCallbackInfo<Value> &args) {
+		Window* self = NativeClass::Unwrap(args.This());
+		self->Show();
+	}
+
+	void Window::AddChildCallback(const FunctionCallbackInfo<Value> &args) {
+		Isolate* isolate = args.GetIsolate();
+		HandleScope handle_scope(isolate);
+		Window* self = NativeClass::Unwrap(args.This());
+		
+		if (args.Length() < 1) {
+			isolate->ThrowException(Exception::TypeError(
+				String::NewFromUtf8(isolate, "Unable to execute method: 1 argument required.").ToLocalChecked()
+			));
+		}
+
+		if (args[0]->IsObject()) {
+			Local<Object> widget = Local<Object>::Cast(args[0]);
+			
+			if (!widget.IsEmpty() && widget->InternalFieldCount() > 0) {
+				void* ptr = widget->GetAlignedPointerFromInternalField(0);
+
+				// TODO: Generalize widget type
+				Button* native_widget = static_cast<Button *>(ptr);
+				self->AddChild(native_widget->GetGtkWidget());
+			}
 		}
 	}
 
@@ -261,11 +279,6 @@ namespace mosaic::presentation {
 			String::Utf8Value str(isolate, value);
 			self->SetTitle(*str);
 		}
-	}
-
-	void Window::ShowCallback(const FunctionCallbackInfo<Value> &args) {
-		Window* self = NativeClass::Unwrap(args.Holder());
-		self->Show();
 	}
 
 	// void Window::GetOnClickCallback(Local<String> property, const PropertyCallbackInfo<Value>& info) {
