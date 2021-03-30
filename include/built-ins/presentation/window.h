@@ -41,24 +41,17 @@ namespace mosaic::presentation {
 			static void GetTitleCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
 			static void SetTitleCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
 
-			// TODO: Remake this
-			static void GetOnClickCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
-			static void SetOnClickCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
-
 		private:
 			Window(char* title, int width, int height);
 			~Window() {};
 			GtkWidget * window_ = nullptr;
 
-			// TODO: Remake this
-			Persistent<Function> callback_;
+			// TODO: Map constructors to contexts
+			Persistent<Context> constructor_;
 	};
 
 	class WindowModule : public NativeModule {
-		private:
-			Local<Module> module_;
 		public:
-			using NativeModule::NativeModule;
-			Local<Module> GetModule() override;
+			static Local<Module> Make(Isolate* isolate);
 	};
 }

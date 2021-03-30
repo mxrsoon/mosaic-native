@@ -37,29 +37,6 @@ namespace mosaic::presentation {
 		}), this);
 	}
 
-	Local<Function> Window::Init(Local<Context> context) {
-		Isolate * isolate = context->GetIsolate();
-		EscapableHandleScope handle_scope(isolate);
-
-		Local<FunctionTemplate> class_tpl = FunctionTemplate::New(isolate, ConstructorCallback);
-		class_tpl->SetClassName(String::NewFromUtf8(isolate, "Window").ToLocalChecked());
-		class_tpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-		Local<FunctionTemplate> show_tpl = FunctionTemplate::New(isolate, ShowCallback);
-
-		Local<ObjectTemplate> proto_tpl = class_tpl->PrototypeTemplate();
-		proto_tpl->Set(String::NewFromUtf8(isolate, "show").ToLocalChecked(), show_tpl);
-		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "width").ToLocalChecked(), GetWidthCallback, SetWidthCallback);
-		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "height").ToLocalChecked(), GetHeightCallback, SetHeightCallback);
-		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minWidth").ToLocalChecked(), GetMinWidthCallback, SetMinWidthCallback);
-		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minHeight").ToLocalChecked(), GetMinHeightCallback, SetMinHeightCallback);
-		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "resizable").ToLocalChecked(), GetResizableCallback, SetResizableCallback);
-		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "title").ToLocalChecked(), GetTitleCallback, SetTitleCallback);
-		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "onClick").ToLocalChecked(), GetOnClickCallback, SetOnClickCallback);
-
-		return handle_scope.Escape(class_tpl->GetFunction(context).ToLocalChecked());
-	}
-
 	void Window::Show() {
 		gtk_window_present(GTK_WINDOW(this->window_));
 	}
@@ -114,6 +91,29 @@ namespace mosaic::presentation {
 
 	void Window::SetTitle(const char* value) {
 		gtk_window_set_title(GTK_WINDOW(this->window_), value);
+	}
+
+	Local<Function> Window::Init(Local<Context> context) {
+		Isolate * isolate = context->GetIsolate();
+		EscapableHandleScope handle_scope(isolate);
+
+		Local<FunctionTemplate> class_tpl = FunctionTemplate::New(isolate, ConstructorCallback);
+		class_tpl->SetClassName(String::NewFromUtf8(isolate, "Window").ToLocalChecked());
+		class_tpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+		Local<FunctionTemplate> show_tpl = FunctionTemplate::New(isolate, ShowCallback);
+
+		Local<ObjectTemplate> proto_tpl = class_tpl->PrototypeTemplate();
+		proto_tpl->Set(String::NewFromUtf8(isolate, "show").ToLocalChecked(), show_tpl);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "width").ToLocalChecked(), GetWidthCallback, SetWidthCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "height").ToLocalChecked(), GetHeightCallback, SetHeightCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minWidth").ToLocalChecked(), GetMinWidthCallback, SetMinWidthCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minHeight").ToLocalChecked(), GetMinHeightCallback, SetMinHeightCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "resizable").ToLocalChecked(), GetResizableCallback, SetResizableCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "title").ToLocalChecked(), GetTitleCallback, SetTitleCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "onClick").ToLocalChecked(), GetOnClickCallback, SetOnClickCallback);
+
+		return handle_scope.Escape(class_tpl->GetFunction(context).ToLocalChecked());
 	}
 
 	void Window::ConstructorCallback(const FunctionCallbackInfo<Value> &args) {
@@ -293,12 +293,7 @@ namespace mosaic::presentation {
 		}
 	}
 
-	Local<Module> WindowModule::GetModule() {
-		if (!this->module_.IsEmpty()) {
-			return this->module_;
-		}
-
-		Isolate* isolate = this->GetContext()->GetIsolate();
+	Local<Module> WindowModule::Make(Isolate* isolate) {
 		EscapableHandleScope handle_scope(isolate);
 
 		Local<Module> module = Module::CreateSyntheticModule(

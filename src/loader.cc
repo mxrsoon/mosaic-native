@@ -173,11 +173,9 @@ MaybeLocal<Module> load_module(Isolate* isolate, Local<Context> context, const c
 	);
 
 	if (strcmp(path, "@mosaic/diagnostics/Debug") == 0) {
-		NativeModule* native_module = (NativeModule *)(new mosaic::diagnostics::DebugModule(context));
-		module = native_module->GetModule();
+		module = mosaic::diagnostics::DebugModule::Make(isolate);
 	} else if (strcmp(path, "@mosaic/presentation/Window") == 0) {
-		NativeModule* native_module = (NativeModule *)(new mosaic::presentation::WindowModule(context));
-		module = native_module->GetModule();
+		module = mosaic::presentation::WindowModule::Make(isolate);
 	} else {
 		const char* contents = read_file(path);
 		Local<String> source_text = String::NewFromUtf8(isolate, contents, NewStringType::kNormal).ToLocalChecked();

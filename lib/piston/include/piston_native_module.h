@@ -4,13 +4,15 @@
 using namespace v8;
 
 namespace piston {
+	template <class T>
 	class NativeModule {
 		public:
-			NativeModule(Local<Context> context): context_(context) {};
-			virtual Local<Module> GetModule() = 0;
-			Local<Context> GetContext() { return context_; }
+			static Local<Module> Make(Isolate* isolate) {
+				return T::Make(context);
+			}
 
 		private:
-			Local<Context> context_;
+			NativeModule();
+			virtual ~NativeModule() = 0;
 	};
 }
