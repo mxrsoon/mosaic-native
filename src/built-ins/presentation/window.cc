@@ -81,9 +81,8 @@ namespace mosaic::presentation {
 	}
 
 	int Window::GetMinWidth() {
-		gint requested_height;
 		gint requested_width;
-		gtk_widget_get_size_request(this->window_, &requested_width, &requested_height);
+		gtk_widget_get_size_request(this->window_, &requested_width, NULL);
 		return requested_width;
 	}
 
@@ -93,8 +92,7 @@ namespace mosaic::presentation {
 
 	int Window::GetMinHeight() {
 		gint requested_height;
-		gint requested_width;
-		gtk_widget_get_size_request(this->window_, &requested_width, &requested_height);
+		gtk_widget_get_size_request(this->window_, NULL, &requested_height);
 		return requested_height;
 	}
 
