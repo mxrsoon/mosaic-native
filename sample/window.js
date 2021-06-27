@@ -10,6 +10,7 @@ async function main() {
 
 function showWindow() {
 	const window = new Window("Title", 600, 400);
+	window.onResize = onWindowResize;
 	window.show();
 	return window;
 }
@@ -18,6 +19,10 @@ function createButton() {
 	const button = new Button("Hello world!");
 	button.onClick = () => Debug.log("Button clicked");
 	return button;
+}
+
+function onWindowResize(width, height) {
+	Debug.log("Window resized:", `${width}x${height}`);
 }
 
 async function loopTitles(window) {

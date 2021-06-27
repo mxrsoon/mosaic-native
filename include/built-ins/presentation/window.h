@@ -45,12 +45,17 @@ namespace mosaic::presentation {
 			static void SetResizableCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
 			static void GetTitleCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
 			static void SetTitleCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
+			static void GetOnResizeCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
+			static void SetOnResizeCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info);
 
 		protected:
 			Window(char* title, int width, int height);
 			~Window() {};
 			inline void SetGtkWidget(GtkWidget* widget) { widget_ = widget; };
 			GtkWidget* widget_;
+			Persistent<Function> resize_callback_;
+			int _last_width;
+			int _last_height;
 	};
 
 	class WindowModule : public NativeModule<WindowModule> {

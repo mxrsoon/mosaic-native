@@ -17,6 +17,32 @@ namespace mosaic::presentation {
 		this->SetGtkWidget(gtk_application_window_new(gtk_app));
 		gtk_window_set_title(GTK_WINDOW(this->GetGtkWidget()), title);
 		gtk_window_set_default_size(GTK_WINDOW(this->GetGtkWidget()), width, height);
+
+		g_signal_connect(this->GetGtkWidget(), "configure-event", G_CALLBACK(+[](GtkWidget* widget, GdkEvent* event, gpointer user_data) {
+			Isolate* isolate = Isolate::GetCurrent();
+			HandleScope handle_scope(isolate);
+			Local<Context> context = isolate->GetCurrentContext();
+
+			Window* self = (Window*)user_data;
+
+			int width = self->GetWidth();
+			int height = self->GetHeight();
+
+			if (width != self->_last_width || height != self->_last_height) {
+				Local<Function> resize_callback = Local<Function>::New(isolate, self->resize_callback_);
+
+				self->_last_width = width;
+				self->_last_height = height;
+
+				if (!resize_callback.IsEmpty()) {
+					Local<Value> args[2];
+					args[0] = Number::New(isolate, width);
+					args[1] = Number::New(isolate, height);
+
+					resize_callback->Call(context, context->Global(), 2, args);
+				}
+			}
+		}), this);
 	}
 
 	void Window::Show() {
@@ -99,7 +125,7 @@ namespace mosaic::presentation {
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minHeight").ToLocalChecked(), GetMinHeightCallback, SetMinHeightCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "resizable").ToLocalChecked(), GetResizableCallback, SetResizableCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "title").ToLocalChecked(), GetTitleCallback, SetTitleCallback);
-		// proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "onClick").ToLocalChecked(), GetOnClickCallback, SetOnClickCallback);
+		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "onResize").ToLocalChecked(), GetOnResizeCallback, SetOnResizeCallback);
 
 		return handle_scope.Escape(class_tpl->GetFunction(context).ToLocalChecked());
 	}
@@ -281,29 +307,29 @@ namespace mosaic::presentation {
 		}
 	}
 
-	// void Window::GetOnClickCallback(Local<String> property, const PropertyCallbackInfo<Value>& info) {
-	// 	Isolate* isolate = info.GetIsolate();
-	// 	HandleScope handle_scope(isolate);
-	// 	Window* self = NativeClass::Unwrap(info.This());
+	void Window::GetOnResizeCallback(Local<String> property, const PropertyCallbackInfo<Value>& info) {
+		Isolate* isolate = info.GetIsolate();
+		HandleScope handle_scope(isolate);
+		Window* self = NativeClass::Unwrap(info.This());
 
-	// 	Local<Function> callback = Local<Function>::New(isolate, self->callback_);
-	// 	info.GetReturnValue().Set(callback);
-	// }
+		Local<Function> callback = Local<Function>::New(isolate, self->resize_callback_);
+		info.GetReturnValue().Set(callback);
+	}
 
-	// void Window::SetOnClickCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
-	// 	Isolate* isolate = info.GetIsolate();
-	// 	HandleScope handle_scope(isolate);
-	// 	Local<Context> context = isolate->GetCurrentContext();
-	// 	Window* self = NativeClass::Unwrap(info.This());
+	void Window::SetOnResizeCallback(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
+		Isolate* isolate = info.GetIsolate();
+		HandleScope handle_scope(isolate);
+		Local<Context> context = isolate->GetCurrentContext();
+		Window* self = NativeClass::Unwrap(info.This());
 
-	// 	if (value->IsFunction()) {
-	// 		self->callback_.Reset(isolate, Local<Function>::Cast(value));
-	// 	} else {
-	// 		isolate->ThrowException(Exception::TypeError(
-	// 			String::NewFromUtf8(isolate, "Failed to set callback. It must be a function.").ToLocalChecked()
-	// 		));
-	// 	}
-	// }
+		if (value->IsFunction()) {
+			self->resize_callback_.Reset(isolate, Local<Function>::Cast(value));
+		} else {
+			isolate->ThrowException(Exception::TypeError(
+				String::NewFromUtf8(isolate, "Failed to set callback. It must be a function.").ToLocalChecked()
+			));
+		}
+	}
 
 	Local<Module> WindowModule::Make() {
 		Isolate* isolate = this->GetIsolate();
