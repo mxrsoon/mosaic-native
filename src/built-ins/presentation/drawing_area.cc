@@ -67,7 +67,6 @@ namespace mosaic::presentation {
 			instance->Wrap(args.This());
 			args.GetReturnValue().Set(args.This());
 		} else {
-			Isolate * isolate = args.GetIsolate();
 			isolate->ThrowException(Exception::TypeError(
 				String::NewFromUtf8(isolate, "Please use the 'new' operator, this constructor cannot be called as a function.").ToLocalChecked()
 			));
