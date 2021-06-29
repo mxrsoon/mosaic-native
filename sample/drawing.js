@@ -1,8 +1,5 @@
 import { Window, DrawingArea } from "mosaic/presentation";
 import { Debug } from "mosaic/diagnostics";
-import { sleep } from "lib/utils.js";
-
-let count = 0;
 
 async function main() {
 	const window = showWindow();
@@ -21,11 +18,8 @@ function createDrawingArea() {
 	return area;
 }
 
-function draw(width, height) {
-	if (count < 50) {
-		count++;
-		Debug.log("Draws:", count, "- Width:", width, "- Height:", height);
-	}
+function draw(context) {
+	Debug.log("Drawing:", context.constructor.name);
 }
 
 await main();

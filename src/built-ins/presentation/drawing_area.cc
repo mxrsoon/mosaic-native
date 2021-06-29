@@ -4,6 +4,7 @@
 #include <piston_native_class.h>
 #include <piston_native_module.h>
 #include <built-ins/presentation/drawing_area.h>
+#include <built-ins/presentation/drawing_context.h>
 #include <stdio.h>
 #include <glib.h>
 #include "loader.h"
@@ -16,7 +17,7 @@ namespace mosaic::presentation {
 		this->SetGtkWidget(gtk_drawing_area_new());
 		gtk_widget_show(this->GetGtkWidget());
 
-		g_signal_connect(this->GetGtkWidget(), "draw", G_CALLBACK(+[](GtkWidget* widget, cairo_t* cairo, gpointer user_data) {
+		g_signal_connect(this->GetGtkWidget(), "draw", G_CALLBACK(+[](GtkWidget* widget, cairo_t* cairo_context, gpointer user_data) {
 			Isolate* isolate = Isolate::GetCurrent();
 			HandleScope handle_scope(isolate);
 			Local<Context> context = isolate->GetCurrentContext();
@@ -25,11 +26,10 @@ namespace mosaic::presentation {
 			Local<Function> callback = Local<Function>::New(isolate, self->draw_callback_);
 
 			if (!callback.IsEmpty()) {
-				Local<Value> args[2];
-				args[0] = Number::New(isolate, self->GetWidth());
-				args[1] = Number::New(isolate, self->GetHeight());
+				Local<Value> args[1];
+				args[0] = DrawingContext::FromCairoContext(context, cairo_context);
 
-				callback->Call(context, context->Global(), 2, args);
+				callback->Call(context, context->Global(), 1, args);
 			}
 		}), this);
 	}
@@ -124,7 +124,8 @@ namespace mosaic::presentation {
 			String::NewFromUtf8(isolate, "DrawingArea").ToLocalChecked(),
 			{
 				String::NewFromUtf8(isolate, "default").ToLocalChecked(),
-				String::NewFromUtf8(isolate, "DrawingArea").ToLocalChecked() 
+				String::NewFromUtf8(isolate, "DrawingArea").ToLocalChecked() ,
+				String::NewFromUtf8(isolate, "DrawingContext").ToLocalChecked() 
 			},
 			[](Local<Context> context, Local<Module> module) -> MaybeLocal<Value> {
 				Isolate* isolate = context->GetIsolate();
@@ -140,6 +141,11 @@ namespace mosaic::presentation {
 				module->SetSyntheticModuleExport(
 					String::NewFromUtf8(isolate, "DrawingArea").ToLocalChecked(), 
 					constructor
+				);
+
+				module->SetSyntheticModuleExport(
+					String::NewFromUtf8(isolate, "DrawingContext").ToLocalChecked(), 
+					DrawingContext::Init(context)
 				);
 				
 				return MaybeLocal<Value>(True(isolate));
