@@ -13,11 +13,18 @@ namespace mosaic::presentation {
 		public:
 			/* Native members */
 			inline cairo_t* GetCairoContext() { return cairo_context_; };
+			void Rect(int x, int y, int width, int height);
+			void SetColor(double r, double g, double b);
+			void SetColor(double r, double g, double b, double a);
+			void Fill();
 			
 			/* V8 members */
 			static Local<Function> Init(Local<Context> context);
-			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
 			static Local<Object> FromCairoContext(Local<Context> context, cairo_t* cairo_context);
+			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
+			static void RectCallback(const FunctionCallbackInfo<Value> &args);
+			static void SetColorCallback(const FunctionCallbackInfo<Value> &args);
+			static void FillCallback(const FunctionCallbackInfo<Value> &args);
 
 		protected:
 			DrawingContext(cairo_t* cairo_context);

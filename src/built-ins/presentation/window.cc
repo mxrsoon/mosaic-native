@@ -53,6 +53,10 @@ namespace mosaic::presentation {
 		gtk_container_add(GTK_CONTAINER(widget_), widget);
 	}
 
+	void Window::Invalidate() {
+		gtk_widget_queue_draw(this->GetGtkWidget());
+	}
+
 	int Window::GetWidth() {
     	return gtk_widget_get_allocated_width(this->GetGtkWidget());
 	}
@@ -115,10 +119,12 @@ namespace mosaic::presentation {
 
 		Local<FunctionTemplate> show_tpl = FunctionTemplate::New(isolate, ShowCallback);
 		Local<FunctionTemplate> add_child_tpl = FunctionTemplate::New(isolate, AddChildCallback);
+		Local<FunctionTemplate> invalidate_tpl = FunctionTemplate::New(isolate, InvalidateCallback);
 
 		Local<ObjectTemplate> proto_tpl = class_tpl->PrototypeTemplate();
 		proto_tpl->Set(String::NewFromUtf8(isolate, "show").ToLocalChecked(), show_tpl);
 		proto_tpl->Set(String::NewFromUtf8(isolate, "addChild").ToLocalChecked(), add_child_tpl);
+		proto_tpl->Set(String::NewFromUtf8(isolate, "invalidate").ToLocalChecked(), invalidate_tpl);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "width").ToLocalChecked(), GetWidthCallback, SetWidthCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "height").ToLocalChecked(), GetHeightCallback, SetHeightCallback);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "minWidth").ToLocalChecked(), GetMinWidthCallback, SetMinWidthCallback);
@@ -183,6 +189,11 @@ namespace mosaic::presentation {
 				self->AddChild(native_widget->GetGtkWidget());
 			}
 		}
+	}
+
+	void Window::InvalidateCallback(const FunctionCallbackInfo<Value> &args) {
+		Window* self = NativeClass::Unwrap(args.This());
+		self->Invalidate();
 	}
 
 	void Window::GetWidthCallback(Local<String> property, const PropertyCallbackInfo<Value>& info) {
