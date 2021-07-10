@@ -10,6 +10,7 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <gtk-3.0/gtk/gtk.h>
 
 #include <piston_module_info.h>
@@ -31,6 +32,7 @@
 
 using namespace v8;
 using namespace piston;
+namespace fs = std::filesystem;
 
 char* executable_path;
 char* main_src;
@@ -119,11 +121,33 @@ const char* read_file(const char* path) {
 }
 
 const char* resolve_module_specifier(const char* referrer, const char* specifier, bool allow_bare_relative = false) {
-	if (specifier[0] == '/' || specifier[0] == '@') {
+	if (specifier[0] == '@') {
 		return specifier;
-	} else if (specifier[0] == '.' && (specifier[1] == '/' || specifier[1] == '.' && specifier[2]) == '/' || allow_bare_relative) {
+	}
+
+	bool absolute = specifier[0] == '/';
+	bool relative = specifier[0] == '.' && (specifier[1] == '/' || specifier[1] == '.' && specifier[2]) == '/' || allow_bare_relative;
+
+	if (absolute || relative) {
 		char* buffer = (char*)malloc(FILENAME_MAX);
-		cwk_path_get_absolute(referrer, specifier, buffer, FILENAME_MAX);
+		fs::path module_path;
+		
+		if (absolute) {
+			module_path = specifier;
+		} else if (relative) {
+			cwk_path_get_absolute(referrer, specifier, buffer, FILENAME_MAX);
+			module_path = buffer;
+		}
+
+		if (fs::exists(module_path)) {
+			module_path = fs::canonical(module_path);
+			
+			if (fs::is_directory(module_path)) {
+				module_path = module_path / "index.js";
+			}
+		}
+
+		strcpy(buffer, module_path.c_str());
 		return buffer;
 	}
 
