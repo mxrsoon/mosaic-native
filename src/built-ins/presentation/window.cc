@@ -127,7 +127,7 @@ namespace mosaic::presentation {
 
 		Local<ObjectTemplate> proto_tpl = class_tpl->PrototypeTemplate();
 		proto_tpl->Set(String::NewFromUtf8(isolate, "show").ToLocalChecked(), show_tpl);
-		proto_tpl->Set(String::NewFromUtf8(isolate, "close").ToLocalChecked(), show_tpl);
+		proto_tpl->Set(String::NewFromUtf8(isolate, "close").ToLocalChecked(), close_tpl);
 		proto_tpl->Set(String::NewFromUtf8(isolate, "addChild").ToLocalChecked(), add_child_tpl);
 		proto_tpl->Set(String::NewFromUtf8(isolate, "invalidate").ToLocalChecked(), invalidate_tpl);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "width").ToLocalChecked(), GetWidthCallback, SetWidthCallback);
