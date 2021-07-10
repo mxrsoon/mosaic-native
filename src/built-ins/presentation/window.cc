@@ -122,6 +122,7 @@ namespace mosaic::presentation {
 		class_tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
 		Local<FunctionTemplate> show_tpl = FunctionTemplate::New(isolate, ShowCallback);
+		Local<FunctionTemplate> close_tpl = FunctionTemplate::New(isolate, CloseCallback);
 		Local<FunctionTemplate> add_child_tpl = FunctionTemplate::New(isolate, AddChildCallback);
 		Local<FunctionTemplate> invalidate_tpl = FunctionTemplate::New(isolate, InvalidateCallback);
 
