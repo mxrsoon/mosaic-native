@@ -3,20 +3,55 @@ import { Debug } from "../../mosaic/diagnostics";
 
 import { DrawingArea as DrawingArea2, DrawingContext as DrawingContext2 } from "./a.js";
 import { Debug as Debug2 } from "./b.js";
+import { assert, assertEquals, until } from "../../lib/test";
+import Test from "../../lib/test/Test.js";
+import TestSet from "../../lib/test/TestSet.js";
 
-const window = new Window("Test", 600, 400);
-const drawingArea = new DrawingArea();
+let window;
+let drawingArea;
+let context;
 
-window.addChild(drawingArea);
-
-drawingArea.onDraw = context => {
-    Debug.log("constructor", context.constructor.name);
-    Debug.log("is instance", context instanceof DrawingContext);
-    Debug.log("is instance from reexported", context instanceof DrawingContext2);
+async function setupDrawing() {
+    window = new Window("Test", 600, 400);
+    drawingArea = new DrawingArea();
     
+    window.addChild(drawingArea);
+    
+    await until((done) => {
+        drawingArea.onDraw = drawingContext => {
+            drawingArea.onDraw = null;
+            context = drawingContext;
+            done();
+        }
+
+        window.show();
+    }, 1000);
+}
+
+function cleanup() {
     window.close();
-};
+    window = null;
+    drawingArea = null;
+    context = null;
+}
 
-Debug.log("debug instance cached", Debug === Debug2);
+await new TestSet({
+    tests: [
+        new Test({
+            name: "should use same constructor for JS and Native instances",
+            before: setupDrawing,
+            after: cleanup,
+            test: () => assert(context instanceof DrawingContext)
+        }),
 
-await window.show();
+        new Test({
+            name: "should use same constructor between JS modules",
+            test: () => assertEquals(DrawingContext, DrawingContext2)
+        }),
+
+        new Test({
+            name: "should use same singleton between modules",
+            test: () => assertEquals(Debug, Debug2)
+        })
+    ]
+}).run(true);
