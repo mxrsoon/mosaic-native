@@ -48,6 +48,10 @@ namespace mosaic::presentation {
 	void Window::Show() {
 		gtk_window_present(GTK_WINDOW(this->GetGtkWidget()));
 	}
+
+	void Window::Close() {
+		gtk_close_window(GTK_WINDOW(this->GetGtkWidget()));
+	}
 	
 	void Window::AddChild(GtkWidget* widget) {
 		gtk_container_add(GTK_CONTAINER(widget_), widget);
@@ -123,6 +127,7 @@ namespace mosaic::presentation {
 
 		Local<ObjectTemplate> proto_tpl = class_tpl->PrototypeTemplate();
 		proto_tpl->Set(String::NewFromUtf8(isolate, "show").ToLocalChecked(), show_tpl);
+		proto_tpl->Set(String::NewFromUtf8(isolate, "close").ToLocalChecked(), show_tpl);
 		proto_tpl->Set(String::NewFromUtf8(isolate, "addChild").ToLocalChecked(), add_child_tpl);
 		proto_tpl->Set(String::NewFromUtf8(isolate, "invalidate").ToLocalChecked(), invalidate_tpl);
 		proto_tpl->SetAccessor(String::NewFromUtf8(isolate, "width").ToLocalChecked(), GetWidthCallback, SetWidthCallback);
@@ -165,6 +170,11 @@ namespace mosaic::presentation {
 	void Window::ShowCallback(const FunctionCallbackInfo<Value> &args) {
 		Window* self = NativeClass::Unwrap(args.This());
 		self->Show();
+	}
+
+	void Window::CloseCallback(const FunctionCallbackInfo<Value> &args) {
+		Window* self = NativeClass::Unwrap(args.This());
+		self->Close();
 	}
 
 	void Window::AddChildCallback(const FunctionCallbackInfo<Value> &args) {

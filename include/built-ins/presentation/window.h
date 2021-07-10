@@ -13,6 +13,7 @@ namespace mosaic::presentation {
 		public:
 			/* Native members */
 			void Show();
+			void Close();
 			void AddChild(GtkWidget* widget);
 			void Invalidate();
 			int GetWidth();
@@ -33,6 +34,7 @@ namespace mosaic::presentation {
 			static Local<Function> Init(Local<Context> context);
 			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
 			static void ShowCallback(const FunctionCallbackInfo<Value> &args);
+			static void CloseCallback(const FunctionCallbackInfo<Value> &args);
 			static void AddChildCallback(const FunctionCallbackInfo<Value> &args);
 			static void InvalidateCallback(const FunctionCallbackInfo<Value> &args);
 			static void GetWidthCallback(Local<String> property, const PropertyCallbackInfo<Value>& info);
