@@ -34,8 +34,8 @@ namespace mosaic::presentation {
 
 	class ButtonModule : public NativeModule<ButtonModule> {
 		public:
-			Local<Module> Make() override;
-		
+			static Local<Module> Make(Isolate* isolate);
+
 		protected:
 			using NativeModule<ButtonModule>::NativeModule;
 	};

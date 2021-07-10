@@ -5,37 +5,36 @@
 using namespace v8;
 
 namespace piston {
-	class NativeModuleBase {
-		public:
-			virtual Local<Module> Make() = 0;
-			Isolate* GetIsolate() { return isolate_; }
-
-		protected:
-			NativeModuleBase(Isolate* isolate): isolate_(isolate) {};
-
-		private:
-			Isolate* isolate_;
-	};
-
 	template <class T>
-	class NativeModule: public NativeModuleBase {
+	class NativeModule {
 		public:
-			static T* GetInstance(Isolate* isolate) {
+			static Local<Module> GetInstance(Isolate* isolate) {
+				EscapableHandleScope handle_scope(isolate);
+				Local<Module> local_handle;
+
 				if (instances_.contains(isolate)) {
-					return instances_[isolate];
+					local_handle = Local<Module>::New(isolate, instances_[isolate]);
+				} else {
+					local_handle = T::Make(isolate);
+
+					Persistent<Module, CopyablePersistentTraits<Module>> persistent_handle(isolate, local_handle);
+
+					instances_.emplace(isolate, persistent_handle);
 				}
 
-				T* instance = new T(isolate);
-				instances_[isolate] = instance;
-				return instance;
+				return handle_scope.Escape(local_handle);
 			}
 
 		protected:
-			NativeModule(Isolate* isolate): NativeModuleBase(isolate) {};
+			static Local<Module> Make(Isolate* isolate) {
+				T::Make(isolate);
+			}
 
 		private:
-			static std::unordered_map<Isolate*, T*> instances_;
+			NativeModule();
+			~NativeModule();
+			static std::unordered_map<Isolate*, Persistent<Module, CopyablePersistentTraits<Module>>> instances_;
 	};
 
-	template<class T> std::unordered_map<Isolate*, T*> NativeModule<T>::instances_;
+	template<class T> std::unordered_map<Isolate*, Persistent<Module, CopyablePersistentTraits<Module>>> NativeModule<T>::instances_;
 }

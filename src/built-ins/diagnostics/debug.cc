@@ -65,8 +65,7 @@ namespace mosaic::diagnostics {
 		fflush(stdout);
 	}
 
-	Local<Module> DebugModule::Make() {
-		Isolate* isolate = this->GetIsolate();
+	Local<Module> DebugModule::Make(Isolate* isolate) {
 		EscapableHandleScope handle_scope(isolate);
 
 		Local<Module> module = Module::CreateSyntheticModule(
@@ -84,11 +83,13 @@ namespace mosaic::diagnostics {
 				Local<Object> instance = constructor->NewInstance(context).ToLocalChecked();
 
 				module->SetSyntheticModuleExport(
+					isolate,
 					String::NewFromUtf8(isolate, "default").ToLocalChecked(), 
 					instance
 				);
 
 				module->SetSyntheticModuleExport(
+					isolate,
 					String::NewFromUtf8(isolate, "log").ToLocalChecked(), 
 					instance->Get(context, String::NewFromUtf8(isolate, "log").ToLocalChecked()).ToLocalChecked().As<Function>()
 				);

@@ -200,20 +200,14 @@ MaybeLocal<Module> load_module(Isolate* isolate, Local<Context> context, const c
 	);
 
 	if (path_str.starts_with("@mosaic")) {
-		NativeModuleBase* native_module;
-
 		if (strcmp(path, "@mosaic/diagnostics/Debug") == 0) {
-			native_module = (NativeModuleBase*)mosaic::diagnostics::DebugModule::GetInstance(isolate);
+			module = mosaic::diagnostics::DebugModule::GetInstance(isolate);
 		} else if (strcmp(path, "@mosaic/presentation/Window") == 0) {
-			native_module = (NativeModuleBase*)mosaic::presentation::WindowModule::GetInstance(isolate);
+			module = mosaic::presentation::WindowModule::GetInstance(isolate);
 		} else if (strcmp(path, "@mosaic/presentation/Button") == 0) {
-			native_module = (NativeModuleBase*)mosaic::presentation::ButtonModule::GetInstance(isolate);
+			module = mosaic::presentation::ButtonModule::GetInstance(isolate);
 		} else if (strcmp(path, "@mosaic/presentation/DrawingArea") == 0) {
-			native_module = (NativeModuleBase*)mosaic::presentation::DrawingAreaModule::GetInstance(isolate);
-		}
-
-		if (native_module != nullptr) {
-			module = native_module->Make();
+			module = mosaic::presentation::DrawingAreaModule::GetInstance(isolate);
 		}
 	} else {
 		const char* contents = read_file(path);

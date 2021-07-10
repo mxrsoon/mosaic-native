@@ -115,6 +115,8 @@ namespace mosaic::presentation {
 
 		if (value->IsFunction()) {
 			self->click_callback_.Reset(isolate, Local<Function>::Cast(value));
+		} else if (value->IsNullOrUndefined()) {
+			self->click_callback_.Empty();
 		} else {
 			isolate->ThrowException(Exception::TypeError(
 				String::NewFromUtf8(isolate, "Failed to set callback. It must be a function.").ToLocalChecked()
@@ -122,8 +124,7 @@ namespace mosaic::presentation {
 		}
 	}
 
-	Local<Module> ButtonModule::Make() {
-		Isolate* isolate = this->GetIsolate();
+	Local<Module> ButtonModule::Make(Isolate* isolate) {
 		EscapableHandleScope handle_scope(isolate);
 
 		Local<Module> module = Module::CreateSyntheticModule(
@@ -140,11 +141,13 @@ namespace mosaic::presentation {
 				Local<Function> constructor = Button::Init(context);
 
 				module->SetSyntheticModuleExport(
+					isolate,
 					String::NewFromUtf8(isolate, "default").ToLocalChecked(), 
 					constructor
 				);
 
 				module->SetSyntheticModuleExport(
+					isolate,
 					String::NewFromUtf8(isolate, "Button").ToLocalChecked(), 
 					constructor
 				);

@@ -34,8 +34,8 @@ namespace mosaic::presentation {
 
 	class DrawingAreaModule : public NativeModule<DrawingAreaModule> {
 		public:
-			Local<Module> Make() override;
-		
+			static Local<Module> Make(Isolate* isolate);
+			
 		protected:
 			using NativeModule<DrawingAreaModule>::NativeModule;
 	};

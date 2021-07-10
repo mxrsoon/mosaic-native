@@ -64,8 +64,8 @@ namespace mosaic::presentation {
 
 	class WindowModule : public NativeModule<WindowModule> {
 		public:
-			Local<Module> Make() override;
-		
+			static Local<Module> Make(Isolate* isolate);
+
 		protected:
 			using NativeModule<WindowModule>::NativeModule;
 	};

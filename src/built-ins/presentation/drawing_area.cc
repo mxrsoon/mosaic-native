@@ -108,6 +108,8 @@ namespace mosaic::presentation {
 
 		if (value->IsFunction()) {
 			self->draw_callback_.Reset(isolate, Local<Function>::Cast(value));
+		} else if (value->IsNullOrUndefined()) {
+			self->draw_callback_.Empty();
 		} else {
 			isolate->ThrowException(Exception::TypeError(
 				String::NewFromUtf8(isolate, "Failed to set callback. It must be a function.").ToLocalChecked()
@@ -115,8 +117,7 @@ namespace mosaic::presentation {
 		}
 	}
 
-	Local<Module> DrawingAreaModule::Make() {
-		Isolate* isolate = this->GetIsolate();
+	Local<Module> DrawingAreaModule::Make(Isolate* isolate) {
 		EscapableHandleScope handle_scope(isolate);
 
 		Local<Module> module = Module::CreateSyntheticModule(
@@ -134,16 +135,19 @@ namespace mosaic::presentation {
 				Local<Function> constructor = DrawingArea::Init(context);
 
 				module->SetSyntheticModuleExport(
+					isolate,
 					String::NewFromUtf8(isolate, "default").ToLocalChecked(), 
 					constructor
 				);
 
 				module->SetSyntheticModuleExport(
+					isolate,
 					String::NewFromUtf8(isolate, "DrawingArea").ToLocalChecked(), 
 					constructor
 				);
 
 				module->SetSyntheticModuleExport(
+					isolate,
 					String::NewFromUtf8(isolate, "DrawingContext").ToLocalChecked(), 
 					DrawingContext::Init(context)
 				);
