@@ -50,7 +50,7 @@ namespace mosaic::presentation {
 	}
 
 	void Window::Close() {
-		gtk_close_window(GTK_WINDOW(this->GetGtkWidget()));
+		gtk_window_close(GTK_WINDOW(this->GetGtkWidget()));
 	}
 	
 	void Window::AddChild(GtkWidget* widget) {
