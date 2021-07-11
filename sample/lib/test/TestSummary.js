@@ -111,10 +111,13 @@ export class TestSummary {
                 count = `${sections.slice(0, -1).join(", ")} and ${sections[sections.length - 1]}.`;
             }
             
-            count = count[0].toUpperCase() + count.substr(1);
-
             Debug.log();
-            Debug.log(`${this.total} tests executed:`, count);
+
+            if (this.total === this.passed) {
+                Debug.log(`${this.total} tests executed:`, count);
+            } else {
+                Debug.error(`${this.total} tests executed:`, count);
+            }
         } else {
             Debug.log("No tests executed.");
         }
