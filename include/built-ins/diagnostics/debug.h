@@ -10,9 +10,17 @@ using namespace piston;
 namespace mosaic::diagnostics {
 	class Debug : public NativeClass<Debug> {
 		public:
+			static void Log();
+			static void Log(int argc, char* argv[], bool newLine = true);
+			static void Log(char* arg, bool newLine = true);
+			static void Error();
+			static void Error(int argc, char* argv[], bool newLine = true);
+			static void Error(char* arg, bool newLine = true);
+
 			static Local<Function> Init(Local<Context> context);
 			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
 			static void LogCallback(const FunctionCallbackInfo<Value> &args);
+			static void ErrorCallback(const FunctionCallbackInfo<Value> &args);
 
 		private:
 			Debug() {};
