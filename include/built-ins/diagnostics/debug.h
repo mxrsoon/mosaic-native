@@ -17,7 +17,7 @@ namespace mosaic::diagnostics {
 			static void Error(int argc, char* argv[], bool newLine = true);
 			static void Error(char* arg, bool newLine = true);
 
-			static Local<Function> Init(Local<Context> context);
+			static Local<Function> Make(Local<Context> context);
 			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
 			static void LogCallback(const FunctionCallbackInfo<Value> &args);
 			static void ErrorCallback(const FunctionCallbackInfo<Value> &args);

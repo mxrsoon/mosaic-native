@@ -19,7 +19,7 @@ namespace mosaic::presentation {
 			void Fill();
 			
 			/* V8 members */
-			static Local<Function> Init(Local<Context> context);
+			static Local<Function> Make(Local<Context> context);
 			static Local<Object> FromCairoContext(Local<Context> context, cairo_t* cairo_context);
 			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
 			static void RectCallback(const FunctionCallbackInfo<Value> &args);

@@ -18,7 +18,6 @@ namespace piston {
 					local_handle = T::Make(isolate);
 
 					Persistent<Module, CopyablePersistentTraits<Module>> persistent_handle(isolate, local_handle);
-
 					instances_.emplace(isolate, persistent_handle);
 				}
 

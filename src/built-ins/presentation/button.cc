@@ -38,7 +38,7 @@ namespace mosaic::presentation {
 		gtk_button_set_label(GTK_BUTTON(this->GetGtkWidget()), value);
 	}
 
-	Local<Function> Button::Init(Local<Context> context) {
+	Local<Function> Button::Make(Local<Context> context) {
 		Isolate * isolate = context->GetIsolate();
 		EscapableHandleScope handle_scope(isolate);
 
@@ -138,7 +138,7 @@ namespace mosaic::presentation {
 				Isolate* isolate = context->GetIsolate();
 				HandleScope handle_scope(isolate);
 
-				Local<Function> constructor = Button::Init(context);
+				Local<Function> constructor = Button::GetConstructor(context);
 
 				module->SetSyntheticModuleExport(
 					isolate,

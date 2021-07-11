@@ -42,7 +42,7 @@ namespace mosaic::presentation {
     	return gtk_widget_get_allocated_height(this->GetGtkWidget());
 	}
 
-	Local<Function> DrawingArea::Init(Local<Context> context) {
+	Local<Function> DrawingArea::Make(Local<Context> context) {
 		Isolate * isolate = context->GetIsolate();
 		EscapableHandleScope handle_scope(isolate);
 
@@ -132,7 +132,7 @@ namespace mosaic::presentation {
 				Isolate* isolate = context->GetIsolate();
 				HandleScope handle_scope(isolate);
 
-				Local<Function> constructor = DrawingArea::Init(context);
+				Local<Function> constructor = DrawingArea::GetConstructor(context);
 
 				module->SetSyntheticModuleExport(
 					isolate,
@@ -149,7 +149,7 @@ namespace mosaic::presentation {
 				module->SetSyntheticModuleExport(
 					isolate,
 					String::NewFromUtf8(isolate, "DrawingContext").ToLocalChecked(), 
-					DrawingContext::Init(context)
+					DrawingContext::GetConstructor(context)
 				);
 				
 				return MaybeLocal<Value>(True(isolate));

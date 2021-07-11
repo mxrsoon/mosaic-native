@@ -31,7 +31,7 @@ namespace mosaic::presentation {
 			inline GtkWidget* GetGtkWidget() { return widget_; };
 			
 			/* V8 members */
-			static Local<Function> Init(Local<Context> context);
+			static Local<Function> Make(Local<Context> context);
 			static void ConstructorCallback(const FunctionCallbackInfo<Value> &args);
 			static void ShowCallback(const FunctionCallbackInfo<Value> &args);
 			static void CloseCallback(const FunctionCallbackInfo<Value> &args);

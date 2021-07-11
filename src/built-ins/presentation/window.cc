@@ -113,7 +113,7 @@ namespace mosaic::presentation {
 		gtk_window_set_title(GTK_WINDOW(this->GetGtkWidget()), value);
 	}
 
-	Local<Function> Window::Init(Local<Context> context) {
+	Local<Function> Window::Make(Local<Context> context) {
 		Isolate * isolate = context->GetIsolate();
 		EscapableHandleScope handle_scope(isolate);
 
@@ -368,7 +368,7 @@ namespace mosaic::presentation {
 				Isolate* isolate = context->GetIsolate();
 				HandleScope handle_scope(isolate);
 
-				Local<Function> constructor = Window::Init(context);
+				Local<Function> constructor = Window::GetConstructor(context);
 
 				module->SetSyntheticModuleExport(
 					isolate,

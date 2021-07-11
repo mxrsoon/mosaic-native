@@ -38,6 +38,7 @@ char* executable_path;
 char* main_src;
 
 GtkApplication* gtk_app;
+int context_counter = 0;
 
 std::unique_ptr<Platform> v8_platform;
 Local<Context> v8_context;
@@ -237,7 +238,9 @@ MaybeLocal<Module> load_module(Isolate* isolate, Local<Context> context, const c
 }
 
 Local<Context> create_global_context(Isolate* isolate) {
-	// Create new template
+	EscapableHandleScope handle_scope(isolate);
+
+	// Create new global template
 	Local<ObjectTemplate> global_template = ObjectTemplate::New(isolate);
 
 	// Add 'setTimeout' function to 'global' template
@@ -245,8 +248,10 @@ Local<Context> create_global_context(Isolate* isolate) {
 
 	// Create new context using the template
 	Local<Context> context = Context::New(isolate, NULL, global_template);
+	context->SetEmbedderData(1, Number::New(isolate, context_counter));
+	context_counter++;
 
-	return context;
+	return handle_scope.Escape(context);
 }
 
 void run_module(Isolate* isolate, Local<Context> context, const char* path) {

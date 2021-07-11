@@ -24,7 +24,7 @@ namespace mosaic::presentation {
 		EscapableHandleScope handle_scope(isolate);
 
 		// TODO: Cache constructor per context
-		Local<Function> constructor = DrawingContext::Init(context);
+		Local<Function> constructor = DrawingContext::GetConstructor(context);
 
 		DrawingContext::UnlockConstructor();
 		Local<Object> instance = constructor->NewInstance(context).ToLocalChecked();
@@ -36,7 +36,7 @@ namespace mosaic::presentation {
 		return handle_scope.Escape(instance);
 	}
 
-	Local<Function> DrawingContext::Init(Local<Context> context) {
+	Local<Function> DrawingContext::Make(Local<Context> context) {
 		Isolate* isolate = context->GetIsolate();
 		EscapableHandleScope handle_scope(isolate);
 
