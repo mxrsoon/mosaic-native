@@ -1,6 +1,6 @@
 import { Debug } from "../../mosaic/diagnostics";
 import Test from "./Test.js";
-import { TestResult } from "./TestResult.js";
+import { TestResult, TestResultType } from "./TestResult.js";
 
 /**
  * A set of tests to be executed.
@@ -51,13 +51,38 @@ export class TestSet {
             await this.#before();
         }
 
+        const count = {
+            passed: 0,
+            failed: 0,
+            errors: 0
+        };
+
         for (let test of this.#tests) {
             const result = await test.run();
             results.push(result);
 
             if (printResults) {
-                Debug.log(result.toString());
+                switch (result.type) {
+                    case TestResultType.pass:
+                        Debug.log(result.toString());
+                        count.passed++;
+                        break;
+                    
+                    case TestResultType.fail:
+                        Debug.error(result.toString());
+                        count.failed++;
+                        break;
+
+                    case TestResultType.error:
+                        Debug.error(result.toString());
+                        count.errors++;
+                        break;
+                }
             }
+        }
+
+        if (printResults) {
+            this.#printSummary(count);
         }
 
         if (this.#after) {
@@ -66,6 +91,32 @@ export class TestSet {
 
         this.#results = results;
         return this.results;
+    }
+
+    #printSummary(count) {
+        const summary = [];
+        
+        if (count.passed > 0) {
+            summary.push(`${count.passed} passed`);
+        }
+
+        if (count.failed > 0) {
+            summary.push(`${count.failed} failed`);
+        }
+
+        if (count.errors > 0) {
+            summary.push(`${count.errors} with error`);
+        }
+
+        if (summary.length === 0) {
+            Debug.log("No tests executed.");
+        } else if (summary.length === 1) {
+            Debug.log();
+            Debug.log(`${summary[0]}.`);
+        } else {
+            Debug.log();
+            Debug.log(`${summary.slice(0, -1).join(", ")} and ${summary[summary.length - 1]}.`);
+        }
     }
 }
 
