@@ -1,6 +1,6 @@
-import { Debug } from "../../mosaic/diagnostics";
+import { Debug } from "../../mosaic/diagnostics/index.js";
 import Test from "./Test.js";
-import { TestResult, TestResultType } from "./TestResult.js";
+import { TestSummary } from "./TestSummary.js";
 
 /**
  * A set of tests to be executed.
@@ -28,95 +28,47 @@ export class TestSet {
     /** @type {function} */
     #after;
 
-    /** @type {TestResult[]} */
-    #results = [];
+    /** @type {TestSummary} */
+    #summary = [];
 
     /**
-     * Results of the last run.
-     * @type {TestResult[]}
+     * Summary of the last run.
+     * @type {TestSummary}
      */
-    get results() {
-        return Array.from(this.#results);
+    get summary() {
+        return Array.from(this.#summary);
     }
 
     /**
      * Run the tests.
-     * @returns {TestResult[]} Results of the run.
+     * @returns {Promise<TestSummary>} Summary of the run.
      */
     async run(printResults = false) {
-        /** @type {TestResult[]} */
-        let results = [];
+        const summary = new TestSummary();
 
         if (this.#before) {
             await this.#before();
         }
 
-        const count = {
-            passed: 0,
-            failed: 0,
-            errors: 0
-        };
-
         for (let test of this.#tests) {
             const result = await test.run();
-            results.push(result);
+            summary.addResult(result);
 
             if (printResults) {
-                switch (result.type) {
-                    case TestResultType.pass:
-                        Debug.log(result.toString());
-                        count.passed++;
-                        break;
-                    
-                    case TestResultType.fail:
-                        Debug.error(result.toString());
-                        count.failed++;
-                        break;
-
-                    case TestResultType.error:
-                        Debug.error(result.toString());
-                        count.errors++;
-                        break;
-                }
+                result.print();
             }
         }
 
         if (printResults) {
-            this.#printSummary(count);
+            summary.print();
         }
 
         if (this.#after) {
             await this.#after();
         }
 
-        this.#results = results;
-        return this.results;
-    }
-
-    #printSummary(count) {
-        const summary = [];
-        
-        if (count.passed > 0) {
-            summary.push(`${count.passed} passed`);
-        }
-
-        if (count.failed > 0) {
-            summary.push(`${count.failed} failed`);
-        }
-
-        if (count.errors > 0) {
-            summary.push(`${count.errors} with error`);
-        }
-
-        if (summary.length === 0) {
-            Debug.log("No tests executed.");
-        } else if (summary.length === 1) {
-            Debug.log();
-            Debug.log(`${summary[0]}.`);
-        } else {
-            Debug.log();
-            Debug.log(`${summary.slice(0, -1).join(", ")} and ${summary[summary.length - 1]}.`);
-        }
+        this.#summary = summary;
+        return this.summary;
     }
 }
 

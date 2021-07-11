@@ -1,3 +1,5 @@
+import { Debug } from "../../mosaic/diagnostics";
+
 /**
  * Enum for possible test result types.
  * @enum {string}
@@ -61,12 +63,23 @@ export class TestResult {
         return this.#cause;
     }
 
+    /**
+     * Print test result in readable format.
+     */
+    print() {
+        if (this.type === TestResultType.pass) {
+            Debug.log(this.toString());
+        } else {
+            Debug.error(this.toString());
+        }
+    }
+
     toString() {
         const symbol = this.type === TestResultType.pass ? "✓" : "✗";
         const label = this.type[0].toUpperCase() + this.type.substr(1);
 
         if (this.cause) {
-            return `${symbol} [${label}] ${this.test.name}: ${this.cause}`;
+            return `${symbol} [${label}] ${this.test.name}: \n  - ${this.cause}`;
         } else {
             return `${symbol} [${label}] ${this.test.name}`;
         }

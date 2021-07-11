@@ -211,6 +211,7 @@ MaybeLocal<Module> load_module(Isolate* isolate, Local<Context> context, const c
 			module = mosaic::presentation::DrawingAreaModule::GetInstance(isolate);
 		}
 	} else {
+		// TODO: Cache modules loaded from files
 		const char* contents = read_file(path);
 		Local<String> source_text = String::NewFromUtf8(isolate, contents, NewStringType::kNormal).ToLocalChecked();
 		

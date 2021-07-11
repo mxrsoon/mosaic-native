@@ -1,5 +1,5 @@
 import Debug from "@mosaic/diagnostics/Debug";
-import TestFailedError from "./TestFailedError.js";
+import { TestFailedError } from "./TestFailedError.js";
 
 export function assert(value) {
     if (!value) {

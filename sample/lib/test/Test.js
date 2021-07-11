@@ -1,4 +1,5 @@
-import TestFailedError from "./TestFailedError.js";
+import { Debug } from "../../mosaic/diagnostics/index.js";
+import { TestFailedError } from "./TestFailedError.js";
 import { TestResult, TestResultType } from "./TestResult.js";
 
 /**
@@ -53,7 +54,7 @@ export class Test {
 
     /**
      * Run the test.
-     * @returns {TestResult} Result of the run.
+     * @returns {Promise<TestResult>} Result of the run.
      */
     async run() {
         /** @type {TestResult} */
@@ -68,7 +69,8 @@ export class Test {
                 await this.#test();
                 result = new TestResult(this, TestResultType.pass);
             } catch (e) {
-                if (e instanceof TestFailedError) {
+                // TODO: Revert to using instanceof when module caching is implemented
+                if (e.constructor.name === "TestFailedError") {
                     result = new TestResult(
                         this,
                         TestResultType.fail,
