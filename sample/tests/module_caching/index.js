@@ -1,8 +1,8 @@
 import { Window, DrawingArea, DrawingContext } from "../../mosaic/presentation";
 import { Debug } from "../../mosaic/diagnostics";
 
-import { DrawingArea as DrawingArea2, DrawingContext as DrawingContext2 } from "./a.js";
-import { Debug as Debug2 } from "./b.js";
+import { DrawingArea as DrawingArea2, DrawingContext as DrawingContext2, testVar } from "./a.js";
+import { Debug as Debug2, testVar as testVar2 } from "./b.js";
 import { assert, assertEquals, until } from "../../lib/test";
 import Test from "../../lib/test/Test.js";
 import TestSet from "../../lib/test/TestSet.js";
@@ -52,6 +52,11 @@ await new TestSet({
         new Test({
             name: "should use same singleton between modules",
             test: () => assertEquals(Debug, Debug2)
+        }),
+
+        new Test({
+            name: "should use same instance of JS module",
+            test: () => assertEquals(testVar, testVar2)
         })
     ]
 }).run(true);
