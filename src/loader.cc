@@ -8,13 +8,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <iostream>
 #include <gtk-3.0/gtk/gtk.h>
 
 #include <piston_module_info.h>
 #include <piston_native_module.h>
+#include <piston_module_repository.h>
 #include <built-ins/diagnostics/debug.h>
 #include <built-ins/presentation/window.h>
 #include <built-ins/presentation/button.h>
@@ -38,29 +39,19 @@ char* executable_path;
 char* main_src;
 
 GtkApplication* gtk_app;
-int context_counter = 0;
+int next_context_id = 1;
 
 std::unique_ptr<Platform> v8_platform;
 Local<Context> v8_context;
 Isolate* v8_isolate;
 TryCatch* v8_trycatch;
 UniquePersistent<Function> v8_set_timeout_latest_callback;
+ModuleRepository* module_repository;
 
 const char* get_current_dir() {
 	char* buffer = (char*)malloc(FILENAME_MAX);
 	GetCurrentDir(buffer, FILENAME_MAX);
 	return buffer;
-}
-
-const char* get_dirname(const char* path) {
-	size_t dirname_length;
-	cwk_path_get_dirname(path, &dirname_length);
-
-	char* dirname = (char*)malloc(dirname_length);
-	memcpy(dirname, path, dirname_length);
-	dirname[dirname_length] = '\0';
-
-	return dirname;
 }
 
 const char* path_to_file_uri(const char* path) {
@@ -97,47 +88,36 @@ const char* path_to_file_uri(const char* path) {
 	return uri;
 }
 
-const char* read_file(const char* path) {
-	FILE* file = fopen(path, "rb");
-	if (file == NULL) return "";
-
-	fseek(file, 0, SEEK_END);
-	size_t size = ftell(file);
-	rewind(file);
-
-	char* chars = new char[size + 1];
-	chars[size] = '\0';
-
-	for (size_t i = 0; i < size;) {
-		i += fread(&chars[i], 1, size - i, file);
-
-		if (ferror(file)) {
-			fclose(file);
-			return "";
-		}
-	}
-
-	fclose(file);
-	return chars;
-}
-
-const char* resolve_module_specifier(const char* referrer, const char* specifier, bool allow_bare_relative = false) {
-	if (specifier[0] == '@') {
-		return specifier;
-	}
-
+// TODO: Clean up this function (remove cwalk dep.)
+string resolve_module_specifier(string specifier, string referrer = string()) {
 	bool absolute = specifier[0] == '/';
-	bool relative = specifier[0] == '.' && (specifier[1] == '/' || specifier[1] == '.' && specifier[2]) == '/' || allow_bare_relative;
+	bool relative = specifier[0] == '.' && (specifier[1] == '/' || specifier[1] == '.' && specifier[2] == '/');
 
 	if (absolute || relative) {
-		char* buffer = (char*)malloc(FILENAME_MAX);
 		fs::path module_path;
 		
 		if (absolute) {
 			module_path = specifier;
-		} else if (relative) {
-			cwk_path_get_absolute(referrer, specifier, buffer, FILENAME_MAX);
+		} else {
+			fs::path referrer_path = referrer;
+			fs::path specifier_path = specifier;
+			referrer_path.remove_filename();
+
+			if (referrer_path.empty()) {
+				referrer_path = get_current_dir();
+
+				if (referrer_path.has_filename()) {
+					referrer_path += "/";
+				}
+			}
+
+			char* buffer = (char*)malloc(FILENAME_MAX);
+			cwk_path_get_absolute(referrer_path.c_str(), specifier.c_str(), buffer, FILENAME_MAX);
 			module_path = buffer;
+
+			if (!specifier_path.has_filename() && module_path.has_filename()) {
+				module_path += "/";
+			}
 		}
 
 		if (fs::exists(module_path)) {
@@ -148,8 +128,13 @@ const char* resolve_module_specifier(const char* referrer, const char* specifier
 			}
 		}
 
-		strcpy(buffer, module_path.c_str());
-		return buffer;
+		return string(module_path);
+	} else if (specifier[0] == '@') {
+		// TODO: Prevent access to file system in those special cases.
+		// If a specifier starts with @ but the full specifier doesn't match anything in
+		// the repository, it will try to find the module in the file system. This is a
+		// potential vulnerability and should be fixed. 
+		return specifier;
 	}
 
 	return "";
@@ -163,79 +148,10 @@ void report_exception(Isolate* isolate, TryCatch* try_catch) {
 
 void initialize_import_meta_object_callback(Local<Context> context, Local<Module> module, Local<Object> meta) {
 	Isolate* isolate = context->GetIsolate();
+	ModuleInfo* mod_info = module_repository->GetModuleInfo(module);
 
-	ModuleInfo* mod_info = ModuleInfo::Get(module);
-
-	String::Utf8Value source(isolate, mod_info->origin->ResourceName());
-	MaybeLocal<String> uri = String::NewFromUtf8(isolate, path_to_file_uri(*source));
-
+	MaybeLocal<String> uri = String::NewFromUtf8(isolate, path_to_file_uri(mod_info->GetPath().c_str()));
 	meta->Set(context, String::NewFromUtf8(isolate, "url").ToLocalChecked(), uri.ToLocalChecked());
-}
-
-MaybeLocal<Module> resolve_module_callback(Local<Context> context, Local<String> specifier, Local<FixedArray> import_assertions, Local<Module> referrer) {
-	ModuleInfo* referrer_info = ModuleInfo::Get(referrer);
-	String::Utf8Value referrer_origin(context->GetIsolate(), referrer_info->origin->ResourceName());
-
-	String::Utf8Value utf8_specifier(context->GetIsolate(), specifier);
-	const char* resolved = resolve_module_specifier(get_dirname(*referrer_origin), *utf8_specifier, true);
-
-	MaybeLocal<Module> mod = load_module(context->GetIsolate(), context, resolved);
-	return mod;
-}
-
-MaybeLocal<Module> load_module(Isolate* isolate, Local<Context> context, const char* path) {
-	Local<Module> module;
-	std::string path_str(path);
-
-	ScriptOrigin* origin = new ScriptOrigin(
-		String::NewFromUtf8(isolate, path, NewStringType::kNormal).ToLocalChecked(),   // specifier
-		Integer::New(isolate, 0),                                                      // line offset
-		Integer::New(isolate, 0),                                                      // column offset
-		False(isolate),                                                                // is cross origin
-		Local<Integer>(),                                                              // script id
-		Local<Value>(),                                                                // source map URL
-		False(isolate),                                                                // is opaque
-		False(isolate),                                                                // is WASM
-		True(isolate),                                                                 // is ES6 module
-		Local<PrimitiveArray>()                                                        // host options
-	);
-
-	if (path_str.starts_with("@mosaic")) {
-		if (strcmp(path, "@mosaic/diagnostics/Debug") == 0) {
-			module = mosaic::diagnostics::DebugModule::GetInstance(isolate);
-		} else if (strcmp(path, "@mosaic/presentation/Window") == 0) {
-			module = mosaic::presentation::WindowModule::GetInstance(isolate);
-		} else if (strcmp(path, "@mosaic/presentation/Button") == 0) {
-			module = mosaic::presentation::ButtonModule::GetInstance(isolate);
-		} else if (strcmp(path, "@mosaic/presentation/DrawingArea") == 0) {
-			module = mosaic::presentation::DrawingAreaModule::GetInstance(isolate);
-		}
-	} else {
-		// TODO: Cache modules loaded from files
-		const char* contents = read_file(path);
-		Local<String> source_text = String::NewFromUtf8(isolate, contents, NewStringType::kNormal).ToLocalChecked();
-		
-		Context::Scope context_scope(context);
-		ScriptCompiler::Source source(source_text, *origin);
-		ScriptCompiler::CompileModule(isolate, &source).ToLocal(&module);
-	}
-
-	if (module.IsEmpty()) {
-		return MaybeLocal<Module>();
-	}
-
-	ModuleInfo* mod_info = new ModuleInfo(module, origin);
-
-	// TODO: Resolve import requests ahead of time (useful for async)
-	// for (int i = 0; i < module->GetModuleRequestsLength(); i++) {
-	// 	Local<String> specifier = module->GetModuleRequest(i); // "some thing"
-	// }
-
-	if (module->InstantiateModule(context, resolve_module_callback).IsNothing()) {
-		return MaybeLocal<Module>();
-	}
-
-	return MaybeLocal<Module>(module);
 }
 
 Local<Context> create_global_context(Isolate* isolate) {
@@ -249,33 +165,10 @@ Local<Context> create_global_context(Isolate* isolate) {
 
 	// Create new context using the template
 	Local<Context> context = Context::New(isolate, NULL, global_template);
-	context->SetEmbedderData(1, Number::New(isolate, context_counter));
-	context_counter++;
+	context->SetEmbedderData(1, Number::New(isolate, next_context_id));
+	next_context_id++;
 
 	return handle_scope.Escape(context);
-}
-
-void run_module(Isolate* isolate, Local<Context> context, const char* path) {
-	const char* cwd = get_current_dir();
-	path = resolve_module_specifier(cwd, main_src, true);
-
-	MaybeLocal<Module> maybe_module = load_module(isolate, context, path);
-	Local<Module> module;
-	
-	if (maybe_module.ToLocal(&module)) {
-		Local<Promise> promise = Local<Promise>::Cast(module->Evaluate(context).ToLocalChecked());
-
-		if (promise->State() == Promise::PromiseState::kRejected) {
-			Local<Value> result = promise->Result();
-			isolate->ThrowException(result);
-		}
-	}
-
-	if (v8_trycatch->HasCaught()) {
-		// Print thrown exception
-		report_exception(isolate, v8_trycatch);
-		exit(0);
-	}
 }
 
 void run_application() {
@@ -302,6 +195,9 @@ void run_application() {
 		v8_context = create_global_context(v8_isolate);
 		Context::Scope context_scope(v8_context);
 
+		// Create a new module repository
+		module_repository = setup_module_repository(v8_context);
+
 		// Set meta object init callback.
 		v8_isolate->SetHostInitializeImportMetaObjectCallback(initialize_import_meta_object_callback);
 
@@ -311,6 +207,26 @@ void run_application() {
 		// TODO: Use GApplication instead of GTKApplication to keep app running
 		// while there are timers set even without GTKWindow instances present
 	}
+}
+
+ModuleRepository* setup_module_repository(Local<Context> context) {
+	// Setup callbacks
+	function<string(string, string)> resolve_specifier_callback = resolve_module_specifier;
+
+	// Create repository
+	ModuleRepository* repository = new ModuleRepository(context, resolve_specifier_callback);
+	setup_builtin_modules(repository);
+
+	return repository;
+}
+
+void setup_builtin_modules(ModuleRepository* repository) {
+	Isolate* isolate = repository->GetIsolate();
+
+	repository->Add("@mosaic/diagnostics/Debug", mosaic::diagnostics::DebugModule::GetInstance(isolate));
+	repository->Add("@mosaic/presentation/Window", mosaic::presentation::WindowModule::GetInstance(isolate));
+	repository->Add("@mosaic/presentation/Button", mosaic::presentation::ButtonModule::GetInstance(isolate));
+	repository->Add("@mosaic/presentation/DrawingArea", mosaic::presentation::DrawingAreaModule::GetInstance(isolate));
 }
 
 /**
@@ -366,9 +282,31 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
+void run_module(Isolate* isolate, Local<Context> context, string path) {
+	HandleScope handle_scope(v8_isolate);
+
+	MaybeLocal<Module> maybe_module = module_repository->GetOrLoadModule(path);
+	Local<Module> module;
+	
+	if (maybe_module.ToLocal(&module)) {
+		Local<Promise> promise = Local<Promise>::Cast(module->Evaluate(context).ToLocalChecked());
+
+		if (promise->State() == Promise::PromiseState::kRejected) {
+			Local<Value> result = promise->Result();
+			isolate->ThrowException(result);
+		}
+	}
+
+	if (v8_trycatch->HasCaught()) {
+		// Print thrown exception
+		report_exception(isolate, v8_trycatch);
+		exit(0);
+	}
+}
+
 static void gtk_app_activate_callback(GtkApplication* app, gpointer user_data) {	
 	// Run the module
-	run_module(v8_isolate, v8_context, main_src);
+	run_module(v8_isolate, v8_context, string(main_src));
 }
 
 GtkApplication* initialize_gtk_app(const char* package_name, int argc, char* argv[]) {

@@ -1,27 +1,26 @@
-#include <unordered_map>
 #include <v8.h>
 #include <piston_module_info.h>
+#include <string>
+
+using namespace v8;
+using namespace std;
 
 namespace piston {
-	using namespace v8;
 
-	std::unordered_multimap<int, ModuleInfo*> module_info_map;
-
-	ModuleInfo::ModuleInfo(Local<Module> module, const ScriptOrigin* origin) {
-		this->module = module;
-		this->origin = origin;
-
-		module_info_map.emplace(module->GetIdentityHash(), this);
+	ModuleInfo::ModuleInfo(Local<Module> module, string path) {
+		this->persistent_.Reset(Isolate::GetCurrent(), module);
+		this->path_ = path;
+	}
+	
+	string ModuleInfo::GetPath() {
+		return string(path_);
 	}
 
-	ModuleInfo* ModuleInfo::Get(Local<Module> module) {
-		auto range = module_info_map.equal_range(module->GetIdentityHash());
+	Local<Module> ModuleInfo::GetModule() {
+		return GetModule(Isolate::GetCurrent());
+	}
 
-		for (auto it = range.first; it != range.second; ++it) {
-			if (it->second->module == module)
-			return it->second;
-		}
-
-		return nullptr;
+	Local<Module> ModuleInfo::GetModule(Isolate* isolate) {
+		return Local<Module>::New(isolate, persistent_);
 	}
 }
