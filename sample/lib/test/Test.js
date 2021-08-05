@@ -1,4 +1,3 @@
-import { Debug } from "../../mosaic/diagnostics/index.js";
 import { TestFailedError } from "./TestFailedError.js";
 import { TestResult, TestResultType } from "./TestResult.js";
 
@@ -69,8 +68,7 @@ export class Test {
                 await this.#test();
                 result = new TestResult(this, TestResultType.pass);
             } catch (e) {
-                // TODO: Revert to using instanceof when module caching is implemented
-                if (e.constructor.name === "TestFailedError") {
+                if (e instanceof TestFailedError) {
                     result = new TestResult(
                         this,
                         TestResultType.fail,
